@@ -27,7 +27,7 @@ import useUsers from "@/hooks/useUsers";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-export const formatAddress = (address: string) => {
+const formatAddress = (address: string) => {
   return address.slice(0, 6).concat("...", address.slice(-4));
 };
 
