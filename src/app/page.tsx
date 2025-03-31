@@ -10,6 +10,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
+import { Card, CardContent } from "@/components/ui/card";
+import useChartData from "@/hooks/useChartData";
 import useHomeData from "@/hooks/useHomeData";
 import useUsers from "@/hooks/useUsers";
 import Image from "next/image";
@@ -21,7 +33,13 @@ export const formatAddress = (address: string) => {
 
 export default function Home() {
   const { data, isLoading } = useUsers();
+
+  const [activeChart, setActiveChart] = useState<"points" | "deposits">(
+    "points"
+  );
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [depositPage, setDepositPage] = useState(1);
+  const itemsPerPage = 10;
 
   const handleCheckboxChange = (address: string) => {
     if (!isUserDataLoading) {
@@ -36,8 +54,23 @@ export default function Home() {
     }
   }, [data, selectedUser]);
 
+  useEffect(() => {
+    setDepositPage(1);
+  }, [selectedUser]);
+
   const { data: userData, isLoading: isUserDataLoading } = useHomeData(
     selectedUser ?? ""
+  );
+
+  const { data: chartData, isLoading: isChartLoading } = useChartData();
+  console.log(chartData?.data);
+
+  const paginatedDeposits = userData?.deposits?.slice(
+    (depositPage - 1) * itemsPerPage,
+    depositPage * itemsPerPage
+  );
+  const totalPages = Math.ceil(
+    (userData?.deposits?.length ?? 0) / itemsPerPage
   );
 
   return (
@@ -128,8 +161,8 @@ export default function Home() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {userData?.deposits?.length ? (
-                    userData.deposits.map((deposit: any, index: number) => (
+                  {paginatedDeposits?.length ? (
+                    paginatedDeposits?.map((deposit: any, index: number) => (
                       <TableRow key={deposit.token_address + index}>
                         <TableCell className="font-medium">
                           {formatAddress(deposit.token_address)}
@@ -148,6 +181,31 @@ export default function Home() {
                   )}
                 </TableBody>
               </Table>
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-4">
+                  <button
+                    onClick={() =>
+                      setDepositPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={depositPage === 1}
+                    className="bg-[#F78044] cursor-pointer px-3 py-1 rounded-sm disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span>
+                    Page {depositPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setDepositPage((prev) => Math.min(prev + 1, totalPages))
+                    }
+                    disabled={depositPage === totalPages}
+                    className="bg-[#F78044] cursor-pointer px-3 py-1 rounded-sm disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="bg-[#FECB77] p-4 rounded-sm flex flex-col">
@@ -183,6 +241,73 @@ export default function Home() {
                 </TableBody>
               </Table>
             </div>
+
+            <Card className="bg-[#FECB77] p-4 rounded-sm border-none">
+              <CardContent>
+                <h2 className="text-2xl font-semibold mb-4">
+                  Cumulative Deposits & Points
+                </h2>
+                <div className="flex gap-4 mb-4">
+                  <button
+                    className={`px-4 py-2 rounded-sm cursor-pointer text-sm ${
+                      activeChart === "points"
+                        ? "bg-[#82ca9d] text-white"
+                        : "bg-white"
+                    }`}
+                    onClick={() => setActiveChart("points")}
+                  >
+                    Points
+                  </button>
+                  <button
+                    className={`px-4 py-2 rounded-sm cursor-pointer text-sm ${
+                      activeChart === "deposits"
+                        ? "bg-[#8884d8] text-white"
+                        : "bg-white"
+                    }`}
+                    onClick={() => setActiveChart("deposits")}
+                  >
+                    Deposits
+                  </button>
+                </div>
+                <ResponsiveContainer width="100%" height={350}>
+                  <AreaChart data={chartData?.data}>
+                    <CartesianGrid stroke="#555" strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(date, index) => {
+                        const d = new Date(date);
+                        const day = d.getDate().toString().padStart(2, "0");
+                        const month = d.toLocaleString("default", {
+                          month: "short",
+                        });
+                        return index === 0 ? `${month} ${day}` : day;
+                      }}
+                    />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    {activeChart === "points" && (
+                      <Area
+                        type="monotone"
+                        dataKey="points"
+                        stroke="#82ca9d"
+                        fill="#82ca9d"
+                        name="Total Points Earned"
+                      />
+                    )}
+                    {activeChart === "deposits" && (
+                      <Area
+                        type="monotone"
+                        dataKey="deposits"
+                        stroke="#8884d8"
+                        fill="#8884d8"
+                        name="Total Deposits (USD)"
+                      />
+                    )}
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
