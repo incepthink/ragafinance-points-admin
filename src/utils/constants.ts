@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export const BackendUrl = "https://ragafinancepoints.mooo.com";
+export const BackendUrl = "https://raga.stablevaults.com";
 
 export const testAddress = "0x4142676ec5706706D3a0792997c4ea343405376b";
 
