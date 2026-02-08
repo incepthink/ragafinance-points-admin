@@ -38,6 +38,7 @@ export default function Home() {
     "points"
   );
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [userPage, setUserPage] = useState(1);
   const [depositPage, setDepositPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -64,6 +65,12 @@ export default function Home() {
 
   const { data: chartData, isLoading: isChartLoading } = useChartData();
   console.log(chartData?.data);
+
+  const paginatedUsers = data?.slice(
+    (userPage - 1) * itemsPerPage,
+    userPage * itemsPerPage
+  );
+  const totalUserPages = Math.ceil((data?.length ?? 0) / itemsPerPage);
 
   const paginatedDeposits = userData?.deposits?.slice(
     (depositPage - 1) * itemsPerPage,
@@ -98,7 +105,7 @@ export default function Home() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data?.map((user: any) => {
+                  {paginatedUsers?.map((user: any) => {
                     const isChecked = selectedUser === user.eth_address;
                     return (
                       <TableRow
@@ -130,6 +137,33 @@ export default function Home() {
                   })}
                 </TableBody>
               </Table>
+              {totalUserPages > 1 && (
+                <div className="flex justify-between items-center mt-4">
+                  <button
+                    onClick={() =>
+                      setUserPage((prev) => Math.max(prev - 1, 1))
+                    }
+                    disabled={userPage === 1}
+                    className="bg-[#F78044] cursor-pointer px-3 py-1 rounded-sm disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span>
+                    Page {userPage} of {totalUserPages}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setUserPage((prev) =>
+                        Math.min(prev + 1, totalUserPages)
+                      )
+                    }
+                    disabled={userPage === totalUserPages}
+                    className="bg-[#F78044] cursor-pointer px-3 py-1 rounded-sm disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="bg-[#FECB77] p-4 rounded-sm flex flex-col">
